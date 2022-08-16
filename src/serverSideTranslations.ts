@@ -9,7 +9,8 @@ import { globalI18n } from './appWithTranslation'
 import { UserConfig, SSRConfig } from './types'
 import { FallbackLng } from 'i18next'
 
-const DEFAULT_CONFIG_PATH = './next-i18next.config.js'
+const DEFAULT_CONFIG_PATH = './next-i18next.config'
+const DEFAULT_CONFIG_EXTENSIONS = ['.js', '.mjs', '.cjs']
 
 const flatLocales = (locales: false | FallbackLng) => {
   if (typeof locales === 'string') {
@@ -33,6 +34,19 @@ const flatNamespaces = (namespacesByLocale: string[][]) => {
   }
   return Array.from(new Set(allNamespaces))
 }
+export const loadUserConfig = async (
+  src = DEFAULT_CONFIG_PATH
+): Promise<UserConfig | null> => {
+  for (let i = 0; i<DEFAULT_CONFIG_EXTENSIONS.length; i++)
+  {
+    const route = `${src}${DEFAULT_CONFIG_EXTENSIONS[i]}`
+    if (fs.existsSync(path.resolve(route)))
+    {
+      return import(path.resolve(route))
+    }
+  }
+  return null
+}
 
 export const serverSideTranslations = async (
   initialLocale: string,
@@ -46,8 +60,8 @@ export const serverSideTranslations = async (
 
   let userConfig = configOverride
 
-  if (!userConfig && fs.existsSync(path.resolve(DEFAULT_CONFIG_PATH))) {
-    userConfig = await import(path.resolve(DEFAULT_CONFIG_PATH))
+  if (!userConfig) {
+    userConfig = await loadUserConfig()
   }
 
   if (userConfig === null) {
